@@ -178,45 +178,8 @@ class FaceEncoder:
             "num_faces_detected": len(faces),
         }
 
-
-# ---------------------------------------------------------------------------
-# CLI entry-point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    # if len(sys.argv) < 2:
-    #     print(f"Usage: python -m face.encoder <image_path>")
-    #     sys.exit(1)
-
-    print(f"[*] Initialising FaceEncoder (CPU) …")
-    encoder = FaceEncoder(ctx_id=-1)
-
-    image_path = sys.argv[1]
-
-    image_path1 = r"test_images\WIN_20251108_21_56_21_Pro.jpg"
-    image_path2 = r"test_images\WIN_20260902_18_30_07_Pro.jpg"
-
-
-    result1 = encoder.encode_image(image_path1)
-    result2 = encoder.encode_image(image_path2)
-
-    distance = cosine_distance(result1['embedding'], result2['embedding'])
-    print(f"Distance between {image_path1} and {image_path2}: {distance}")
-
-    # print(f"[*] Processing: {image_path}")
-    # result = encoder.encode_image(image_path)
-
-    
-
-    emb = result["embedding"]
-    print()
-    print(f"  Faces detected : {result['num_faces_detected']}")
-    print(f"  Selected bbox  : {result['bbox']}")
-    print(f"  Det. confidence: {result['det_score']:.4f}")
-    print(f"  Embedding shape: {emb.shape}")
-    print(f"  Embedding norm : {np.linalg.norm(emb):.6f}")
-
-    # --- Draw bounding box on the image and display ----------------------
+def visualise_box(image_path: str, result: dict, window_name : str) -> None:
+        # --- Draw bounding box on the image and display ----------------------
     import os
 
     img = cv2.imread(image_path)
@@ -233,16 +196,57 @@ if __name__ == "__main__":
     cv2.rectangle(img, (x1, y1 - th - 10), (x1 + tw + 4, y1), (0, 255, 0), -1)
     cv2.putText(img, label, (x1 + 2, y1 - 6), font, font_scale, (0, 0, 0), thickness)
 
-    # Save annotated image next to the original
-    base, ext = os.path.splitext(image_path)
-    output_path = f"{base}_bbox{ext}"
-    cv2.imwrite(output_path, img)
-    print(f"\n  Saved annotated image -> {output_path}")
 
     # Show in a window (press any key to close)
-    cv2.imshow("Face Detection", img)
-    print("  Press any key in the image window to close ...")
+    cv2.imshow(window_name, img)
+    # print("  Press any key in the image window to close ...")
+
+
+    print("\n[✓] Done.")
+
+
+# ---------------------------------------------------------------------------
+# CLI entry-point
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    # if len(sys.argv) < 2:
+    #     print(f"Usage: python -m face.encoder <image_path>")
+    #     sys.exit(1)
+
+    print(f"[*] Initialising FaceEncoder (CPU) …")
+    encoder = FaceEncoder(ctx_id=-1)
+
+    # image_path = sys.argv[1]
+
+    image_path1 = r"test_images\WIN_20251108_21_56_21_Pro.jpg"
+    image_path2 = r"test_images\WIN_20260902_18_30_07_Pro.jpg"
+
+
+    result1 = encoder.encode_image(image_path1)
+    result2 = encoder.encode_image(image_path2)
+
+    distance = cosine_distance(result1['embedding'], result2['embedding'])
+    print(f"Distance between {image_path1} and {image_path2}: {distance}")
+
+    visualise_box(image_path1, result1, "Image1")
+    visualise_box(image_path2, result2, "Image2")
+
+    
+    # print("  Press any key in the image window to close ...")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    print("\n[✓] Done.")
+    # print(f"[*] Processing: {image_path}")
+    # result = encoder.encode_image(image_path)
+
+    
+
+    # emb = result["embedding"]
+    # print()
+    # print(f"  Faces detected : {result['num_faces_detected']}")
+    # print(f"  Selected bbox  : {result['bbox']}")
+    # print(f"  Det. confidence: {result['det_score']:.4f}")
+    # print(f"  Embedding shape: {emb.shape}")
+    # print(f"  Embedding norm : {np.linalg.norm(emb):.6f}")
+
