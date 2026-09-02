@@ -196,14 +196,7 @@ def visualise_box(image_path: str, result: dict, window_name : str) -> None:
     cv2.rectangle(img, (x1, y1 - th - 10), (x1 + tw + 4, y1), (0, 255, 0), -1)
     cv2.putText(img, label, (x1 + 2, y1 - 6), font, font_scale, (0, 0, 0), thickness)
 
-
-    # Show in a window (press any key to close)
     cv2.imshow(window_name, img)
-    # print("  Press any key in the image window to close ...")
-
-
-    print("\n[✓] Done.")
-
 
 # ---------------------------------------------------------------------------
 # CLI entry-point
@@ -227,13 +220,13 @@ if __name__ == "__main__":
     result2 = encoder.encode_image(image_path2)
 
     distance = cosine_distance(result1['embedding'], result2['embedding'])
-    print(f"Distance between {image_path1} and {image_path2}: {distance}")
+    print(f"Distance between Image1 and Image2: {distance}")
 
     visualise_box(image_path1, result1, "Image1")
     visualise_box(image_path2, result2, "Image2")
 
     
-    # print("  Press any key in the image window to close ...")
+    
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
