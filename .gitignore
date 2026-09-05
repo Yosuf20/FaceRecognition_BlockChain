@@ -9,3 +9,12 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Debug / runtime artifacts
+debug_candidates/
+
+# Local test images (personal, not part of the project)
+test_images/
+
+# Editor configs
+.vscode/

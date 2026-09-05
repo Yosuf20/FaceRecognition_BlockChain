@@ -65,6 +65,9 @@ def extract_post(url: str, platform: str) -> dict:
     if response.status_code != 200:
         raise ValueError(f"Failed to fetch '{url}' (HTTP {response.status_code})")
 
+    if "reddit.com" in url:
+        return _extract_reddit(url)
+
     soup = BeautifulSoup(response.text, "html.parser")
 
     title = _get_meta(soup, "og:title", "twitter:title")
@@ -82,6 +85,28 @@ def extract_post(url: str, platform: str) -> dict:
         "author": author,
         "text": description or title,
         "image_url": image_url,
+    }
+
+def _extract_reddit(url: str) -> dict:
+    """
+    Reddit exposes a clean public JSON API for any post: just append
+    '.json' to the URL. No auth needed, far more reliable than scraping
+    Reddit's HTML (which serves bot-blocked pages with no og:image).
+    """
+    json_url = url.rstrip("/") + ".json"
+    response = requests.get(json_url, headers=HEADERS, timeout=15)
+    if response.status_code != 200:
+        raise ValueError(f"Reddit JSON fetch failed (HTTP {response.status_code})")
+
+    data = response.json()
+    post = data[0]["data"]["children"][0]["data"]
+
+    return {
+        "platform": "reddit",
+        "post_url": url,
+        "author": post.get("author"),
+        "text": post.get("title"),
+        "image_url": post.get("url_overridden_by_dest") or post.get("thumbnail"),
     }
 
 

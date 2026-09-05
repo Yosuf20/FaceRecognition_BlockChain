@@ -28,11 +28,28 @@ from search.post_extractor import extract_post
 DEFAULT_THRESHOLD = 0.35  # same convention as the reference implementation
 
 
-def _download_image(url: str) -> str:
-    """Download an image URL to a temp file, return the local path."""
+DEBUG_DIR = "debug_candidates"  # where downloaded candidate images are kept for inspection
+
+
+def _download_image(url: str, debug_index: int | None = None) -> str:
+    """
+    Download an image URL to disk, return the local path.
+
+    If debug_index is given, saves visibly into DEBUG_DIR/candidate_<i>.jpg
+    (kept, not deleted) so you can open it and eyeball what was actually
+    downloaded. If debug_index is None, saves to a normal OS temp file
+    instead (old behavior).
+    """
     response = requests.get(url, timeout=20)
     if response.status_code != 200:
         raise ValueError(f"Failed to download image '{url}' (HTTP {response.status_code})")
+
+    if debug_index is not None:
+        os.makedirs(DEBUG_DIR, exist_ok=True)
+        path = os.path.join(DEBUG_DIR, f"candidate_{debug_index}.jpg")
+        with open(path, "wb") as f:
+            f.write(response.content)
+        return path
 
     suffix = ".jpg"
     fd, path = tempfile.mkstemp(suffix=suffix)
@@ -74,36 +91,67 @@ def find_best_match(
     best_match = None
     best_distance = float("inf")
 
-    for candidate in candidates:
+    for i, candidate in enumerate(candidates, 1):
         post_url = candidate.get("link")
         platform = candidate.get("source", "unknown")
         if not post_url:
+            print(f"  [{i}] skip: no post URL in candidate")
+            continue
+
+        # Prefer SerpApi's own matched image for re-verification -- this is
+        # the actual image Google Lens judged visually similar, and it's
+        # reliably fetchable (unlike scraping Reddit/Instagram pages, which
+        # often serve bot-blocked/login-walled HTML with no real og:image).
+        reverify_image_url = candidate.get("thumbnail") or (
+            candidate.get("image", {}).get("link") if isinstance(candidate.get("image"), dict) else None
+        )
+
+        # Page scraping is now only used for metadata (author/text) -- if it
+        # fails, we still proceed using SerpApi's own title/source as a
+        # fallback, since a failed scrape shouldn't block re-verification.
+        try:
+            post_data = extract_post(post_url, platform)
+        except ValueError as e:
+            print(f"  [{i}] note: page scrape failed, using SerpApi metadata instead -> {e}")
+            post_data = {
+                "platform": platform,
+                "post_url": post_url,
+                "author": candidate.get("source"),
+                "text": candidate.get("title"),
+                "image_url": None,
+            }
+
+        # If scraping didn't find an image either, that's fine now --
+        # fall back further to SerpApi's thumbnail already resolved above.
+        if not post_data.get("image_url"):
+            post_data["image_url"] = reverify_image_url
+
+        if not reverify_image_url:
+            print(f"  [{i}] skip: no usable image found (page or SerpApi) for {post_url}")
             continue
 
         try:
-            post_data = extract_post(post_url, platform)
-        except ValueError:
-            continue  # page fetch failed, skip this candidate
-
-        if not post_data.get("image_url"):
-            continue  # nothing to re-verify against, skip
-
-        try:
-            local_path = _download_image(post_data["image_url"])
-        except ValueError:
+            local_path = _download_image(reverify_image_url, debug_index=i)
+            print(f"  [{i}] saved candidate image -> {local_path}  (source: {reverify_image_url})")
+        except ValueError as e:
+            print(f"  [{i}] skip: image download failed -> {e}")
             continue
 
         try:
             candidate_result = encoder.encode_image(local_path)
-        except ValueError:
-            continue  # no face found in candidate image, skip
+        except ValueError as e:
+            print(f"  [{i}] skip: no face detected in candidate image -> {e}")
+            continue
         finally:
+            # NOTE: debug images are kept on disk (see DEBUG_DIR) so you can
+            # open them and confirm what was actually downloaded. They are
+            # NOT deleted here anymore -- clean up DEBUG_DIR manually when done.
             if os.path.exists(local_path):
                 with open(local_path, "rb") as f:
                     image_bytes = f.read()
-                os.remove(local_path)
 
         distance = cosine_distance(original_embedding, candidate_result["embedding"])
+        print(f"  [{i}] {platform} {post_url} -> distance={distance:.4f}")
 
         if distance < threshold and distance < best_distance:
             best_distance = distance

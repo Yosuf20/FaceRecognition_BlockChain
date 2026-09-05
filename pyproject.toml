@@ -8,9 +8,12 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.15.0",
     "bs4>=0.0.2",
     "insightface>=1.0.1",
     "opencv-python>=5.0.0.93",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
 ]
 
 [project.scripts]
