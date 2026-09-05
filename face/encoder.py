@@ -178,6 +178,9 @@ class FaceEncoder:
             "num_faces_detected": len(faces),
         }
 
+def visualise_img(image_path: str):
+    img = cv2.imread(image_path)
+
 def visualise_box(image_path: str, result: dict, window_name : str) -> None:
         # --- Draw bounding box on the image and display ----------------------
     import os

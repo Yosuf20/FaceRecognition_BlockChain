@@ -16,7 +16,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from faceid.encoder import FaceEncoder
+from face.encoder import FaceEncoder
 from search.imgbb_client import ImgBBClient
 from search.lens_client import LensClient
 from search.matcher import find_best_match
