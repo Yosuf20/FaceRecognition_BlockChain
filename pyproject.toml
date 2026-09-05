@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "bs4>=0.0.2",
     "insightface>=1.0.1",
     "opencv-python>=5.0.0.93",
 ]
