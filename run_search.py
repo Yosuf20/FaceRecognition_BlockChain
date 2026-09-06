@@ -13,7 +13,7 @@ Requires environment variables (put these in a .env file, see .env.example):
 """
 
 import sys
-
+import json
 from dotenv import load_dotenv
 
 from face.encoder import FaceEncoder
@@ -53,6 +53,11 @@ def main(image_path: str):
     print("\nBest match found:")
     for key in ("platform", "post_url", "author", "text", "distance", "image_sha256"):
         print(f"  {key}: {match.get(key)}")
+
+    output_path = "match.json"
+    with open(output_path, "w") as f:
+        json.dump(match, f, indent=2)
+    print(f"\nSaved match to '{output_path}' -- use this with run_chain.py")
 
 
 if __name__ == "__main__":
