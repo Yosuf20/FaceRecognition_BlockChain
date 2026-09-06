@@ -38,9 +38,11 @@ def cmd_anchor(match: dict):
     print(f"  Nonce         : {block['nonce']}")
 
 
-def cmd_verify(match: dict):
-    # Re-fetch the LIVE post -- this is what makes 'verify' meaningful
-    # rather than just re-reading the same local file.
+from face.encoder import FaceEncoder, cosine_distance
+import hashlib
+import requests
+
+def cmd_verify(match: dict, original_image_path: str):
     print(f"Re-fetching live post: {match['post_url']}")
     try:
         live_data = extract_post(match["post_url"], match.get("platform", "unknown"))
@@ -48,29 +50,54 @@ def cmd_verify(match: dict):
         print(f"FAIL: could not re-fetch the live post -> {e}")
         return
 
-    # Build a fresh record using the ORIGINAL image_sha256 (the image
-    # itself isn't re-downloaded here; author/text are what we check
-    # for live edits since those are cheap to re-fetch and compare).
     live_record = {
         "platform": match.get("platform"),
         "post_url": match.get("post_url"),
         "author": live_data.get("author") or match.get("author"),
         "text": live_data.get("text") or match.get("text"),
-        "image_sha256": match.get("image_sha256"),
+        "image_sha256": match.get("image_sha256"),  # unchanged for now, checked below
     }
-    live_hash = hash_record(live_record)
 
+    # --- Image re-verification ---
+    live_image_url = live_data.get("image_url") or match.get("image_url")
+    if live_image_url:
+        resp = requests.get(live_image_url, timeout=20)
+        live_image_bytes = resp.content
+        live_image_hash = hashlib.sha256(live_image_bytes).hexdigest()
+
+        if live_image_hash == match.get("image_sha256"):
+            print("  Image check  : PASS (raw file hash identical, byte-for-byte)")
+        else:
+            print("  Image check  : raw hash differs -- checking face similarity instead...")
+            with open("_live_check.jpg", "wb") as f:
+                f.write(live_image_bytes)
+            encoder = FaceEncoder()
+            original_embedding = encoder.encode_image(original_image_path)["embedding"]
+            try:
+                live_embedding = encoder.encode_image("_live_check.jpg")["embedding"]
+                distance = cosine_distance(original_embedding, live_embedding)
+                if distance < 0.35:
+                    print(f"  Image check  : face still matches (distance={distance:.4f}), "
+                          f"but the file itself was re-saved/modified since anchoring")
+                else:
+                    print(f"  Image check  : FAIL -- face no longer matches (distance={distance:.4f}). "
+                          f"Image was likely swapped.")
+            except ValueError:
+                print("  Image check  : FAIL -- no face found in the current live image")
+        live_record["image_sha256"] = live_image_hash
+    else:
+        print("  Image check  : skipped (no image_url available)")
+
+    live_hash = hash_record(live_record)
     chain = LocalChain()
     found_block = chain.lookup(live_hash)
 
     print(f"  Live record : {live_record}")
     print(f"  Live hash   : {live_hash}")
-
     if found_block:
-        print(f"PASS: hash matches on-chain block #{found_block['index']}. Record unchanged.")
+        print(f"PASS: hash matches on-chain block #{found_block['index']}.")
     else:
-        print("FAIL: hash not found on-chain. Either the post was edited/deleted "
-              "since anchoring, or this record was never anchored.")
+        print("FAIL: hash not found on-chain (text/author/image changed since anchoring).")
 
 
 def cmd_tamper(match: dict):
@@ -114,7 +141,10 @@ if __name__ == "__main__":
     if command == "anchor":
         cmd_anchor(match_data)
     elif command == "verify":
-        cmd_verify(match_data)
+        if len(sys.argv) < 4:
+            print("Usage: python run_chain.py verify <match.json> <original_photo.jpg>")
+            sys.exit(1)
+        cmd_verify(match_data, sys.argv[3])
     elif command == "tamper":
         cmd_tamper(match_data)
     else:
