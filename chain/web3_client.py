@@ -14,10 +14,10 @@ Requires in .env:
 """
 
 import os
-
+from config.config import AMOY_CHAIN_ID
 from web3 import Web3
 
-AMOY_CHAIN_ID = 80002
+
 
 # Minimal ABI -- only the functions/events we actually call.
 CONTRACT_ABI = [
