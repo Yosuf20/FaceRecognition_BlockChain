@@ -94,7 +94,10 @@ def _extract_reddit(url: str) -> dict:
     Reddit's HTML (which serves bot-blocked pages with no og:image).
     """
     json_url = url.rstrip("/") + ".json"
-    response = requests.get(json_url, headers=HEADERS, timeout=15)
+    reddit_headers = {
+        "User-Agent": "hh-facechain-verification-bot/1.0"
+    }
+    response = requests.get(json_url, headers=reddit_headers, timeout=15)
     if response.status_code != 200:
         raise ValueError(f"Reddit JSON fetch failed (HTTP {response.status_code})")
 
