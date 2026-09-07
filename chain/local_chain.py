@@ -24,9 +24,10 @@ import hashlib
 import json
 import os
 import time
+from config.config import LOCAL_CHAIN_DIFFICULTY_PREFIX, LOCAL_CHAIN_FILE
 
-CHAIN_FILE = "data/local_chain.json"
-DIFFICULTY_PREFIX = "000"  # number of leading hex zeros required to "mine" a block
+CHAIN_FILE = LOCAL_CHAIN_FILE
+DIFFICULTY_PREFIX = LOCAL_CHAIN_DIFFICULTY_PREFIX  # number of leading hex zeros required to "mine" a block
 
 
 class LocalChain:
