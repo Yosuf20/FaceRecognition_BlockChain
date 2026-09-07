@@ -11,7 +11,7 @@ README/code/behavior from drifting out of sync.
 # Max cosine distance to accept a candidate as a genuine face match.
 # Lower = stricter (fewer false positives, more false negatives).
 # Higher = looser (more false positives, fewer false negatives).
-FACE_MATCH_THRESHOLD = 0.25
+FACE_MATCH_THRESHOLD = 0.30
 
 # Social media domains to keep from raw Google Lens results.
 SOCIAL_DOMAINS = [

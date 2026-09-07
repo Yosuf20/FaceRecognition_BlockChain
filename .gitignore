@@ -23,3 +23,5 @@ data/local_chain.json
 debug_candidates/
 test_images/
 match.json
+
+matches/

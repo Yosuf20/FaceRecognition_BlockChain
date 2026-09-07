@@ -19,7 +19,7 @@ different person captured in a similar pose/angle).
 
 import os
 import tempfile
-
+import shutil
 import requests
 
 from face.encoder import FaceEncoder, cosine_distance
@@ -161,6 +161,15 @@ def find_best_match(
                 **post_data,
                 "distance": distance,
                 "image_sha256": hashlib.sha256(image_bytes).hexdigest(),
+                "candidate_index" : i
             }
+
+    if best_match is not None:
+        os.makedirs("matches", exist_ok=True)
+        source_path = os.path.join(DEBUG_DIR, f"candidate_{best_match['candidate_index']}.jpg")
+        dest_path = os.path.join("matches", "best_match.jpg")
+        if os.path.exists(source_path):
+            shutil.copy(source_path, dest_path)
+            print(f"  Saved winning match image -> {dest_path}")
 
     return best_match
