@@ -23,7 +23,7 @@ import json
 
 import requests
 from dotenv import load_dotenv
-
+from config.config import FACE_MATCH_THRESHOLD
 
 from chain.anchor import build_canonical_record, hash_record
 from chain.local_chain import LocalChain
@@ -94,7 +94,7 @@ def cmd_verify(match: dict, original_image_path: str, chain):
             try:
                 live_embedding = encoder.encode_image("_live_check.jpg")["embedding"]
                 distance = cosine_distance(original_embedding, live_embedding)
-                if distance < 0.35:
+                if distance < FACE_MATCH_THRESHOLD:
                     print(f"  Image check  : face still matches (distance={distance:.4f}), "
                           f"but the file itself was re-saved/modified since anchoring")
                 else:

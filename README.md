@@ -43,7 +43,7 @@ flowchart TD
     D --> E["SerpApi Google Lens<br/>(reverse image search)"]
     E --> F["Filter to social domains<br/>(Instagram, X, Reddit, Pinterest, ...)"]
     F --> G["For each candidate:<br/>download image → re-encode → cosine distance"]
-    G --> H{"distance < 0.35?"}
+    G --> H{"distance < 0.25?"}
     H -- No --> G
     H -- Yes --> I["Best match found<br/>(platform, post_url, author, text, image_sha256)"]
 
@@ -74,6 +74,8 @@ hh-facechain/
 ├── run_chain.py             # Stage 3 CLI: anchor / verify / tamper
 ├── .env                      # your secrets (never commit this)
 ├── .env.example               # template for required env vars
+├── config/
+|   └──config.py
 ├── faceid/
 │   ├── __init__.py
 │   └── encoder.py            # FaceEncoder: detect + embed a face
@@ -228,9 +230,9 @@ sequenceDiagram
         CLI->>Enc: encode original photo + current post image
         Enc-->>CLI: two embeddings
         CLI->>CLI: cosine distance
-        alt distance < 0.35
+        alt distance < 0.25
             CLI->>CLI: same face, file was just re-saved
-        else distance >= 0.35
+        else distance >= 0.25
             CLI->>CLI: image check FAIL — likely swapped
         end
     end
@@ -309,7 +311,7 @@ public network rather than a single local file.
   reliable fallback, and Reddit specifically uses its public JSON API
   (`<post_url>.json`) rather than HTML scraping. `author`/`text` may still be
   `null` for platforms where scraping fails and SerpApi doesn't supply them.
-- **Face-match threshold (0.35 cosine distance) is a heuristic**, not a
+- **Face-match threshold (0.25 cosine distance) is a heuristic**, not a
   guarantee. It was chosen based on informal testing and the convention used
   in comparable open-source projects; borderline cases (low-quality photos,
   extreme angles) may be misclassified in either direction.

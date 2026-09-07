@@ -18,3 +18,8 @@ test_images/
 
 # Editor configs
 .vscode/
+
+data/local_chain.json
+debug_candidates/
+test_images/
+match.json
