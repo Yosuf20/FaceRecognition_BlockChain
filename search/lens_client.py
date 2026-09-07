@@ -13,17 +13,10 @@ import requests
 
 SERPAPI_ENDPOINT = "https://serpapi.com/search"
 
+from config.config import SOCIAL_DOMAINS
+
 # Platforms we care about for this pipeline, ranked by how likely they
 # are to have public, scrapeable content without hitting a login wall.
-SOCIAL_DOMAINS = [
-    "instagram.com",
-    "x.com",
-    "twitter.com",
-    "reddit.com",
-    "pinterest.com",
-    "facebook.com",
-    "linkedin.com",
-]
 
 
 class LensClient:
