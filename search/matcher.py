@@ -25,7 +25,9 @@ import requests
 from face.encoder import FaceEncoder, cosine_distance
 from search.post_extractor import extract_post
 
-DEFAULT_THRESHOLD = 0.35  # same convention as the reference implementation
+from config.config import FACE_MATCH_THRESHOLD
+
+DEFAULT_THRESHOLD = FACE_MATCH_THRESHOLD
 
 
 DEBUG_DIR = "debug_candidates"  # where downloaded candidate images are kept for inspection
